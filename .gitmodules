@@ -1,0 +1,3 @@
+[submodule "recastnavigation-js/recastnavigation"]
+	path = recastnavigation-js/recastnavigation
+	url = https://github.com/recastnavigation/recastnavigation

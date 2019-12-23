@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "*.inc": "glsl",
+        "*.idl": "cpp",
+        "functional": "cpp",
+        "__functional_03": "cpp",
+        "vector": "cpp",
+        "memory": "cpp",
+        "xiosbase": "cpp",
+        "ios": "cpp",
+        "xutility": "cpp"
+    }
+}

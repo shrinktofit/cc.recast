@@ -1,0 +1,17 @@
+<body>
+    <script type="module">
+        import recast from "./recast.js";
+        console.log(recast);
+        recast.then((r) => {
+            const navMeshParam = new recast.dtNavMeshParams();
+            navMeshParam.tileWidth = 10;
+            console.log(navMeshParam.tileWidth);
+
+            const navMesh = new recast.JsDtNavMesh();
+            console.log(navMesh);
+
+            const status = navMesh.init(navMeshParam);
+            console.log(status);
+        });
+	</script>
+</body>

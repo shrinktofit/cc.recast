@@ -1,0 +1,29 @@
+<html>
+    <body>
+        <script type="module">
+            import detourM from './build/recastnavigation-js.js';
+            console.log(detourM);
+
+            detourM().then((detour) => {
+                console.log(`recast OK.`);
+
+                const navMesh = new detour.NavMesh();
+
+                (async () => {
+                    const navMeshDataResponse = await fetch('./solo_navmesh.bin');
+                    const navMeshData = await navMeshDataResponse.arrayBuffer();
+                    console.log(`OK.`);
+
+                    const dBuffer = new detour.DBuffer(navMeshData.byteLength);
+                    const dBufferBytes = dBuffer.getBytes();
+                    dBufferBytes.set(new Uint8Array(navMeshData));
+
+                    detour.NavMesh.initWithData(navMesh, dBuffer, 0);
+
+                    const navMeshQuery = new detour.NavMeshQuery();
+                    navMeshQuery.init(navMesh, 1024);
+                })();
+            });
+        </script>
+    </body>
+</html>
