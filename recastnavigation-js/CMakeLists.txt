@@ -18,6 +18,8 @@ file(GLOB_RECURSE recastNavigationSourceFiles
 )
 
 set (emccLinkerFlags "\
+    -O3 \
+    --memory-init-file 0 \
     --bind \
     -s MODULARIZE=1 \
     -s EXPORT_ES6=1 \
