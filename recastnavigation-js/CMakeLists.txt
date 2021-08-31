@@ -33,7 +33,7 @@ endif ()
 
 add_executable (recastnavigation-js ${wrapperSourceFiles} ${recastNavigationSourceFiles})
 set_target_properties (recastnavigation-js PROPERTIES CXX_STANDARD 17)
-set_target_properties (recastnavigation-js PROPERTIES SUFFIX ".js")
+set_target_properties (recastnavigation-js PROPERTIES SUFFIX ".mjs")
 set_target_properties (recastnavigation-js PROPERTIES LINK_FLAGS ${emccLinkerFlags})
 target_include_directories (recastnavigation-js PRIVATE
     "src"
