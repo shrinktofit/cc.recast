@@ -1,0 +1,51 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "WebAssembly",
+            "displayName": "WebAssembly",
+            "description": "Sets Ninja generator, build and install directory",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_TOOLCHAIN_FILE": "X:\\Dev\\Apps\\emsdk\\upstream\\emscripten\\cmake\\Modules\\Platform\\Emscripten.cmake",
+                "CMAKE_CROSSCOMPILING_EMULATOR": "X:\\Dev\\Apps\\emsdk\\node\\14.15.5_64bit\\bin\\node.exe"
+            }
+        },
+        {
+            "name": "asm.js",
+            "displayName": "asm.js",
+            "description": "Sets Ninja generator, build and install directory",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_TOOLCHAIN_FILE": "X:\\Dev\\Apps\\emsdk\\upstream\\emscripten\\cmake\\Modules\\Platform\\Emscripten.cmake",
+                "CMAKE_CROSSCOMPILING_EMULATOR": "X:\\Dev\\Apps\\emsdk\\node\\14.15.5_64bit\\bin\\node.exe",
+                "BUILD_WASM": false
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "WebAssembly",
+            "description": "",
+            "displayName": "",
+            "configurePreset": "WebAssembly"
+        },
+        {
+            "name": "asm.js",
+            "description": "",
+            "displayName": "",
+            "configurePreset": "asm.js"
+        }
+    ]
+}

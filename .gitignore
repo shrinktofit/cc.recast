@@ -1,2 +1,6 @@
 
 recastnavigation-js/build/
+
+recastnavigation-js/out/
+
+recastnavigation-js/.vs/
