@@ -23,10 +23,17 @@ EMSCRIPTEN_BINDINGS(recast) {
         .constructor()
         ;
 
-    emscripten::function("rcCreateHeightfield", emscripten::select_overload<rcCreateHeightfield_t>([](rcContext& ctx, rcHeightfield& hf, int width, int height,
-						 const float* bmin, const float* bmax,
-						 float cs, float ch) {
-        return rcCreateHeightfield(&ctx, hf, width, height, bmin, bmax, cs, ch);
+    emscripten::function("rcCreateHeightfield", emscripten::select_overload<rcCreateHeightfield_t>([](
+        rcContext& ctx,
+        rcHeightfield& hf,
+        int width,
+        int height,
+        const float* bmin,
+        const float* bmax,
+        float cs,
+        float ch
+        ) {
+            return rcCreateHeightfield(&ctx, hf, width, height, bmin, bmax, cs, ch);
         }))
         ;
 }
