@@ -1,11 +1,13 @@
 
 #include "Detour.h"
+#include "../Common/Vec3.h"
 #include "../../../recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "../../../recastnavigation/Detour/Include/DetourNavMeshQuery.h"
 #include <emscripten/bind.h>
 #include <memory>
 #include <iostream>
 
+namespace wasm_port {
 class DBuffer {
 public:
     DBuffer (std::size_t size_): _size(size_) {
@@ -31,24 +33,6 @@ private:
 dtStatus initWithData(dtNavMesh &navMesh, DBuffer &data, int flags) {
     return navMesh.init(data.data(), data.size(), flags);
 }
-
-struct Point3 {
-    Point3() = default;
-
-    Point3(float x_, float y_, float z_): x(x_), y(y_), z(z_) { }
-
-    float x = 0.0;
-    float y = 0.0;
-    float z = 0.0;
-
-    float* data() {
-        return &x;
-    }
-
-    const float* data() const {
-        return &x;
-    }
-};
 
 struct Point3Object: public Point3 {
 public:
@@ -462,6 +446,9 @@ private:
         return npath;
     }
 };
+}
+
+using namespace wasm_port;
 
 EMSCRIPTEN_BINDINGS(detour) {
     emscripten::register_vector<dtPolyRef>("PolyRefVector");
@@ -496,6 +483,29 @@ EMSCRIPTEN_BINDINGS(detour) {
     emscripten::function("statusFailed", &dtStatusFailed);
     emscripten::function("statusInProgress", &dtStatusInProgress);
     emscripten::function("statusDetail", &dtStatusDetail);
+
+    emscripten::class_<dtPoly>("Poly")
+        .property("verts", emscripten::select_overload<emscripten::memory_view<unsigned short>(const dtPoly &)>(
+            [](const dtPoly &poly_) {
+                return emscripten::typed_memory_view(DT_VERTS_PER_POLYGON, poly_.verts);
+            }))
+        .property("vertCount", &dtPoly::vertCount)
+        ;
+
+    emscripten::class_<dtMeshTile>("MeshTile")
+        .property("verts", emscripten::select_overload<emscripten::memory_view<float>(const dtMeshTile &)>(
+            [](const dtMeshTile &mesh_tile_) {
+                return emscripten::typed_memory_view(mesh_tile_.header->vertCount, mesh_tile_.verts);
+            }))
+        .property("polys", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
+            [](const dtMeshTile &mesh_tile_) {
+                std::vector<dtPoly*> polys(mesh_tile_.header->polyCount);
+                for (int i = 0; i < polys.size(); ++i) {
+                    polys[i] = mesh_tile_.polys + i;
+                }
+                return emscripten::val::array(polys);
+            }))
+        ;
         
     emscripten::class_<dtNavMesh>("NavMesh")
         .constructor()
@@ -514,6 +524,10 @@ EMSCRIPTEN_BINDINGS(detour) {
                     end_position_.data()
                 );
             }))
+        .function("getTile", emscripten::select_overload<const dtMeshTile*(const dtNavMesh &, int)>(
+            [](const dtNavMesh &nav_mesh_, int index_) {
+                return nav_mesh_.getTile(index_);
+            }), emscripten::allow_raw_pointers())
         ;
 
     emscripten::function("readRecastDemoSample", emscripten::select_overload<dtStatus(dtNavMesh &nav_mesh_, DBuffer &data_)>(

@@ -63,7 +63,12 @@ try {
 
     & emcmake cmake .. $cMakeArgs
 
-    & emmake make
+    ## & emmake nmake
+
+    & cmake --build .
 } finally {
     Pop-Location
 }
+
+Copy-Item ./build/recastnavigation-js.mjs "X:\Dev\Repos\Leslie\XLStory\Client\Lib\recastnavigation-js\recastnavigation-js.mjs" -Force
+Copy-Item ./build/recastnavigation-js.wasm "X:\Dev\Repos\Leslie\XLStory\Client\assets\Source\recastnavigation-js.wasm.bin" -Force
