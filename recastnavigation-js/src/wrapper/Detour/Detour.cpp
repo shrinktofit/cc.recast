@@ -485,30 +485,48 @@ EMSCRIPTEN_BINDINGS(detour) {
     emscripten::function("statusDetail", &dtStatusDetail);
 
     emscripten::class_<dtPoly>("Poly")
-        .property("verts", emscripten::select_overload<emscripten::memory_view<unsigned short>(const dtPoly &)>(
+        .property("verts", emscripten::select_overload<emscripten::val(const dtPoly &)>(
             [](const dtPoly &poly_) {
-                return emscripten::typed_memory_view(DT_VERTS_PER_POLYGON, poly_.verts);
+                return emscripten::val(
+                    emscripten::typed_memory_view(DT_VERTS_PER_POLYGON, poly_.verts)
+                );
             }))
         .property("vertCount", &dtPoly::vertCount)
         ;
+    
+    emscripten::class_<dtMeshHeader>("MeshHeader")
+        .property("polyCount", &dtMeshHeader::polyCount)
+        ;
 
     emscripten::class_<dtMeshTile>("MeshTile")
-        .property("verts", emscripten::select_overload<emscripten::memory_view<float>(const dtMeshTile &)>(
-            [](const dtMeshTile &mesh_tile_) {
-                return emscripten::typed_memory_view(mesh_tile_.header->vertCount, mesh_tile_.verts);
+        .property("header", emscripten::select_overload<const dtMeshHeader&(const dtMeshTile &)>(
+            [](const dtMeshTile &tile_) -> const dtMeshHeader& {
+                return *tile_.header;
             }))
-        .property("polys", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
+        .property("verts", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
             [](const dtMeshTile &mesh_tile_) {
-                std::vector<dtPoly*> polys(mesh_tile_.header->polyCount);
-                for (int i = 0; i < polys.size(); ++i) {
-                    polys[i] = mesh_tile_.polys + i;
-                }
-                return emscripten::val::array(polys);
+                return emscripten::val(
+                    emscripten::typed_memory_view(mesh_tile_.header->vertCount, mesh_tile_.verts)
+                );
             }))
+        .function("getPoly", emscripten::select_overload<const dtPoly*(const dtMeshTile &, int index)>(
+            [](const dtMeshTile &mesh_tile_, int index) -> const dtPoly* {
+                return mesh_tile_.polys + index;
+            }), emscripten::allow_raw_pointers())
         ;
+        // .property("polys", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
+        //     [](const dtMeshTile &mesh_tile_) {
+        //         std::vector<dtPoly*> polys(mesh_tile_.header->polyCount);
+        //         for (int i = 0; i < polys.size(); ++i) {
+        //             polys[i] = mesh_tile_.polys + i;
+        //         }
+        //         return emscripten::val::array(polys);
+        //     }))
+        // ;
         
     emscripten::class_<dtNavMesh>("NavMesh")
         .constructor()
+        .function("getMaxTiles", &dtNavMesh::getMaxTiles)
         .class_function("initWithData", &initWithData)
         // .function("initWithData", [](dtNavMesh &nav_mesh_, DBuffer &data_, int flags_) {
         //         return nav_mesh_.init(data_.data(), data_.size(), flags_);

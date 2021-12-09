@@ -16,7 +16,7 @@ file(GLOB_RECURSE recastNavigationDetourSourceFiles
 )
 
 set (emccLinkerFlags "\
-    -O3 \
+    -O0 \
     --memory-init-file 0 \
     --bind \
     -s MODULARIZE=1 \

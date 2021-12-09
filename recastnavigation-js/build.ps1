@@ -70,5 +70,17 @@ try {
     Pop-Location
 }
 
-Copy-Item ./build/recastnavigation-js.mjs "X:\Dev\Repos\Leslie\XLStory\Client\Lib\recastnavigation-js\recastnavigation-js.mjs" -Force
+$content = (Get-Content -Path "./build/recastnavigation-js.mjs").Replace(
+    "throwBindingError('Cannot convert argument of type ' + handle.`$`$.ptrType.name + ' to parameter type ' + this.name)",
+    "// throwBindingError('Cannot convert argument of type ' + handle.`$`$.ptrType.name + ' to parameter type ' + this.name)"
+).Replace(
+    "throwBindingError('Cannot convert argument of type ' + (handle.`$`$.smartPtrType ? handle.`$`$.smartPtrType.name : handle.`$`$.ptrType.name) + ' to parameter type ' + this.name)",
+    "// throwBindingError('Cannot convert argument of type ' + (handle.`$`$.smartPtrType ? handle.`$`$.smartPtrType.name : handle.`$`$.ptrType.name) + ' to parameter type ' + this.name)"
+)
+
+# Write-Host $content
+
+$content | Out-File -Force "X:\Dev\Repos\Leslie\XLStory\Client\Lib\recastnavigation-js\recastnavigation-js.mjs"
 Copy-Item ./build/recastnavigation-js.wasm "X:\Dev\Repos\Leslie\XLStory\Client\assets\Source\recastnavigation-js.wasm.bin" -Force
+(gci "X:\Dev\Repos\Leslie\XLStory\Client\assets\Source\Navigation\NavMeshAgent.ts").LastWriteTime = Get-Date
+Invoke-WebRequest http://localhost:7456/asset-db/refresh
