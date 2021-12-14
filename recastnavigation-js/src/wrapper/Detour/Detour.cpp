@@ -505,8 +505,9 @@ EMSCRIPTEN_BINDINGS(detour) {
             }))
         .property("verts", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
             [](const dtMeshTile &mesh_tile_) {
+                std::cerr << "[vertex]" << mesh_tile_.header->vertCount << std::endl;
                 return emscripten::val(
-                    emscripten::typed_memory_view(mesh_tile_.header->vertCount, mesh_tile_.verts)
+                    emscripten::typed_memory_view(3 * mesh_tile_.header->vertCount, mesh_tile_.verts)
                 );
             }))
         .function("getPoly", emscripten::select_overload<const dtPoly*(const dtMeshTile &, int index)>(
