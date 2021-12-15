@@ -16,6 +16,11 @@ file(GLOB_RECURSE recastNavigationDetourSourceFiles
 
     "recastnavigation/DetourCrowd/*.h"
     "recastnavigation/DetourCrowd/*.cpp"
+
+    "recastnavigation/DebugUtils/Include/DebugDraw.h"
+    "recastnavigation/DebugUtils/Include/DetourDebugDraw.h"
+    "recastnavigation/DebugUtils/Source/DebugDraw.cpp"
+    "recastnavigation/DebugUtils/Source/DetourDebugDraw.cpp"
 )
 
 set (emccLinkerFlags "\
@@ -42,6 +47,7 @@ target_include_directories (recastnavigation-js PRIVATE
     "recastnavigation/Detour/Include"
     "recastnavigation/DetourCrowd/Include"
     "recastnavigation/DetourTileCache/Include"
+    "recastnavigation/DebugUtils/Include"
 )
 
 # file(GLOB_RECURSE recastNavigationRecastSourceFiles

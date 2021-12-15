@@ -1,6 +1,8 @@
 
 #include "Detour.h"
 #include "DetourCrowd.h"
+#include "DebugDraw.h"
+#include "DetourDebugDraw.h"
 #include "../Common/Vec3.h"
 #include "../../../recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "../../../recastnavigation/Detour/Include/DetourNavMeshQuery.h"
@@ -472,6 +474,56 @@ decltype(auto) array_buffer_view_field() {
     });
 }
 
+struct DebugDrawWrapper: public emscripten::wrapper<duDebugDraw> {
+    EMSCRIPTEN_WRAPPER(DebugDrawWrapper);
+
+    ~DebugDrawWrapper() {
+        // call<void>("destructor");
+    }
+
+    void depthMask(bool state) {
+        return call<void>("depthMask", state);
+    }
+
+    void texture(bool state) {
+        return call<void>("texture", state);
+    }
+
+	virtual void begin(duDebugDrawPrimitives prim, float size = 1.0f) {
+        return call<void>("begin", prim, size);
+    }
+
+	virtual void vertex(const float* pos, unsigned int color) {
+        return this->vertex(pos[0], pos[1], pos[2], color);
+    }
+
+	virtual void vertex(const float x, const float y, const float z, unsigned int color) {
+        return call<void>("vertex", x, y, z, color);
+    }
+
+	virtual void vertex(const float* pos, unsigned int color, const float* uv) {
+        return this->vertex(pos[0], pos[1], pos[2], color, uv[0], uv[1]);
+    }
+	
+	virtual void vertex(const float x, const float y, const float z, unsigned int color, const float u, const float v) {
+        return call<void>("vertex", x, y, z, color, u, v);
+    }
+	
+	virtual void end() {
+        return call<void>("end");
+    }
+
+    void vertexPositionColor(const float x, const float y, const float z, unsigned int color) {
+        return this->vertex(x, y, z, color);
+    }
+
+    void vertexPositionColorUV(const float x, const float y, const float z, unsigned int color, const float u, const float v) {
+        return this->vertex(x, y, z, color, u, v);
+    }
+};
+
+using DebugDrawVertex = void(const float x, const float y, const float z, unsigned int color);
+
 EMSCRIPTEN_BINDINGS(detour) {
     emscripten::register_vector<dtPolyRef>("PolyRefVector");
 
@@ -515,9 +567,20 @@ EMSCRIPTEN_BINDINGS(detour) {
             }))
         .property("vertCount", &dtPoly::vertCount)
         ;
+
+    emscripten::class_<dtPolyDetail>("PolyDetail")
+        .property("vertBase", &dtPolyDetail::vertBase)
+        .property("triBase", &dtPolyDetail::triBase)
+        .property("vertCount", &dtPolyDetail::vertCount)
+        .property("triCount", &dtPolyDetail::triCount)
+        ;
     
     emscripten::class_<dtMeshHeader>("MeshHeader")
+        .property("version", &dtMeshHeader::version)
+        .property("vertCount", &dtMeshHeader::vertCount)
         .property("polyCount", &dtMeshHeader::polyCount)
+        .property("vertCount", &dtMeshHeader::detailVertCount)
+        .property("detailTriCount", &dtMeshHeader::detailTriCount)
         ;
 
     emscripten::class_<dtMeshTile>("MeshTile")
@@ -527,7 +590,7 @@ EMSCRIPTEN_BINDINGS(detour) {
             }))
         .property("verts", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
             [](const dtMeshTile &mesh_tile_) {
-                std::cerr << "[vertex]" << mesh_tile_.header->vertCount << std::endl;
+                std::cerr << "[Vertices]::" << mesh_tile_.header->vertCount << std::endl;
                 return emscripten::val(
                     emscripten::typed_memory_view(3 * mesh_tile_.header->vertCount, mesh_tile_.verts)
                 );
@@ -535,6 +598,24 @@ EMSCRIPTEN_BINDINGS(detour) {
         .function("getPoly", emscripten::select_overload<const dtPoly*(const dtMeshTile &, int index)>(
             [](const dtMeshTile &mesh_tile_, int index) -> const dtPoly* {
                 return mesh_tile_.polys + index;
+            }), emscripten::allow_raw_pointers())
+        .property("detailVerts", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
+            [](const dtMeshTile &mesh_tile_) {
+                std::cerr << "[DetailVertices]::" << mesh_tile_.header->detailVertCount << std::endl;
+                return emscripten::val(
+                    emscripten::typed_memory_view(3 * mesh_tile_.header->detailVertCount, mesh_tile_.detailVerts)
+                );
+            }))
+        // .property("detailTris", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
+        //     [](const dtMeshTile &mesh_tile_) {
+        //         std::cerr << "[DetailTriangles]::" << mesh_tile_.header->detailVertCount << std::endl;
+        //         return emscripten::val(
+        //             emscripten::typed_memory_view(/* TODO, not 3 */3 * mesh_tile_.header->detailTriCount, mesh_tile_.detailTris)
+        //         );
+        //     }))
+        .function("getDetailMesh", emscripten::select_overload<const dtPolyDetail*(const dtMeshTile &, int index)>(
+            [](const dtMeshTile &mesh_tile_, int index) -> const dtPolyDetail* {
+                return mesh_tile_.detailMeshes + index;
             }), emscripten::allow_raw_pointers())
         ;
         // .property("polys", emscripten::select_overload<emscripten::val(const dtMeshTile &)>(
@@ -729,4 +810,16 @@ EMSCRIPTEN_BINDINGS(detour) {
                 return Point3(extents[0], extents[1], extents[2]);
             }))
         ;
+
+    emscripten::class_<duDebugDraw>("DebugDraw")
+        .allow_subclass<DebugDrawWrapper>("DebugDrawWrapper")
+        .function("depthMask", &DebugDrawWrapper::depthMask, emscripten::pure_virtual())
+        .function("texture", &DebugDrawWrapper::texture, emscripten::pure_virtual())
+        .function("begin", &DebugDrawWrapper::begin, emscripten::pure_virtual())
+        .function("vertex", &DebugDrawWrapper::vertexPositionColor, emscripten::pure_virtual())
+        .function("vertexUV", &DebugDrawWrapper::vertexPositionColorUV, emscripten::pure_virtual())
+        .function("end", &DebugDrawWrapper::end, emscripten::pure_virtual())
+        ;
+
+    emscripten::function("debugDrawNavMesh", &duDebugDrawNavMesh, emscripten::allow_raw_pointers());
 }
