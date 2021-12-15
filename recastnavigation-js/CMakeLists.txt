@@ -13,6 +13,9 @@ file(GLOB_RECURSE wrapperSourceFiles
 file(GLOB_RECURSE recastNavigationDetourSourceFiles
     "recastnavigation/Detour/*.h"
     "recastnavigation/Detour/*.cpp"
+
+    "recastnavigation/DetourCrowd/*.h"
+    "recastnavigation/DetourCrowd/*.cpp"
 )
 
 set (emccLinkerFlags "\

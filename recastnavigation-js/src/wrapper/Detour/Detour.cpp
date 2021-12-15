@@ -1,5 +1,6 @@
 
 #include "Detour.h"
+#include "DetourCrowd.h"
 #include "../Common/Vec3.h"
 #include "../../../recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "../../../recastnavigation/Detour/Include/DetourNavMeshQuery.h"
@@ -450,6 +451,27 @@ private:
 
 using namespace wasm_port;
 
+template <typename PM>
+struct pm_decomposer { };
+
+template <typename ClassT, typename T, std::size_t N>
+struct pm_decomposer<T (ClassT::*)[N]> {
+    using class_type = ClassT;
+    using element_type = T;
+};
+
+template <auto PM>
+decltype(auto) array_buffer_view_field() {
+    using Decomposer = pm_decomposer<decltype(PM)>;
+    using Class = typename Decomposer::class_type;
+    using Element = typename Decomposer::element_type;
+    return emscripten::select_overload<emscripten::val(const Class &)>([](const Class &o_) -> emscripten::val {
+        return emscripten::val(
+            emscripten::typed_memory_view(std::size(o_.*PM), o_.*PM)
+        );
+    });
+}
+
 EMSCRIPTEN_BINDINGS(detour) {
     emscripten::register_vector<dtPolyRef>("PolyRefVector");
 
@@ -611,5 +633,100 @@ EMSCRIPTEN_BINDINGS(detour) {
     emscripten::class_<Utils>("Utils")
         .class_function("fixupCorridor", &Utils::fixupCorridor)
         .class_function("fixupShortcuts", &Utils::fixupShortcuts)
+        ;
+
+    emscripten::class_<dtCrowdAgent>("CrowdAgent")
+        .property("active", &dtCrowdAgent::active)
+        .property("state", &dtCrowdAgent::state)
+        .property("partial", &dtCrowdAgent::partial)
+	// dtPathCorridor corridor;
+	// dtLocalBoundary boundary;
+        .property("topologyOptTime", &dtCrowdAgent::topologyOptTime)
+        // neis
+        .property("nneis", &dtCrowdAgent::nneis)
+        .property("desiredSpeed", &dtCrowdAgent::desiredSpeed)
+        .property("npos", emscripten::select_overload<emscripten::val(const dtCrowdAgent &)>([](const dtCrowdAgent &agent_) {
+            return emscripten::val(emscripten::typed_memory_view(
+                std::size(agent_.npos),
+                agent_.npos
+            ));
+        }))
+        .property("disp", array_buffer_view_field<&dtCrowdAgent::disp>())
+        .property("dvel", array_buffer_view_field<&dtCrowdAgent::dvel>())
+        .property("nvel", array_buffer_view_field<&dtCrowdAgent::nvel>())
+        .property("vel", array_buffer_view_field<&dtCrowdAgent::vel>())
+        .property("params", &dtCrowdAgent::params)
+        // cornerVerts
+        // cornerFlags
+        // cornerPolys
+        .property("ncorners", &dtCrowdAgent::ncorners)
+        .property("targetState", &dtCrowdAgent::targetState)
+        .property("targetRef", &dtCrowdAgent::targetRef)
+        // .property("targetPos", &dtCrowdAgent::targetPos)
+        // .property("active", &dtCrowdAgent::active) targetPathqRef
+        .property("targetReplan", &dtCrowdAgent::targetReplan)
+        .property("targetReplanTime", &dtCrowdAgent::targetReplanTime)
+        ;
+
+    emscripten::class_<dtCrowdAgentParams>("CrowdAgentParams")
+        .constructor()
+
+    /*
+	/// User defined data attached to the agent.
+	void* userData;
+    */
+        .property("radius", &dtCrowdAgentParams::radius)
+        .property("height", &dtCrowdAgentParams::height)
+        .property("maxAcceleration", &dtCrowdAgentParams::maxAcceleration)
+        .property("maxSpeed", &dtCrowdAgentParams::maxSpeed)
+        .property("collisionQueryRange", &dtCrowdAgentParams::collisionQueryRange)
+        .property("pathOptimizationRange", &dtCrowdAgentParams::pathOptimizationRange)
+        .property("separationWeight", &dtCrowdAgentParams::separationWeight)
+        .property("updateFlags", &dtCrowdAgentParams::updateFlags)
+        .property("obstacleAvoidanceType", &dtCrowdAgentParams::obstacleAvoidanceType)
+        .property("queryFilterType", &dtCrowdAgentParams::queryFilterType)
+        // .property("userData", [](const dtNavMeshParams &params_) -> emscripten::val {
+        //     // TODO
+        //     return emscripten::val::undefined();
+        // }, [](dtNavMeshParams &params_, emscripten::val data_) -> void {
+        //     // TODO
+        // })
+        ;
+
+    emscripten::class_<dtCrowdAgentDebugInfo>("CrowdAgentDebugInfo")
+        ;
+
+    emscripten::class_<dtCrowd>("Crowd")
+        .constructor()
+        .function("init", &dtCrowd::init, emscripten::allow_raw_pointers())
+        .function("getAgent", &dtCrowd::getAgent, emscripten::allow_raw_pointers())
+        .function("getAgentCount", &dtCrowd::getAgentCount)
+        .function("addAgent", emscripten::select_overload<int(dtCrowd &, const Point3 &, const dtCrowdAgentParams &)>(
+            [](dtCrowd &crowd_, const Point3 &pos_, const dtCrowdAgentParams &params_) -> int {
+                return crowd_.addAgent(pos_.data(), &params_);
+            }))
+        .function("updateAgentParameters", &dtCrowd::updateAgentParameters, emscripten::allow_raw_pointers())
+        .function("removeAgent", &dtCrowd::removeAgent)
+        .function("requestMoveTarget", emscripten::select_overload<bool(dtCrowd &, const int, dtPolyRef, const Point3&)>(
+            [](dtCrowd &crowd_, const int idx_, dtPolyRef ref_, const Point3 &pos_) -> bool {
+                return crowd_.requestMoveTarget(idx_, ref_, pos_.data());
+            }))
+        .function("requestMoveVelocity", emscripten::select_overload<bool(dtCrowd &, const int, const Point3&)>(
+            [](dtCrowd &crowd_, const int idx_, const Point3 &vel_) -> bool {
+                return crowd_.requestMoveVelocity(idx_, vel_.data());
+            }))
+        .function("resetMoveTarget", &dtCrowd::resetMoveTarget)
+        .function("update", &dtCrowd::update, emscripten::allow_raw_pointers())
+        .function("getFilter", &dtCrowd::getFilter, emscripten::allow_raw_pointers())
+        .function("getQueryHalfExtents", emscripten::select_overload<Point3(dtCrowd &)>(
+            [](dtCrowd &crowd_) -> Point3 {
+                const auto extents = crowd_.getQueryHalfExtents();
+                return Point3(extents[0], extents[1], extents[2]);
+            }))
+        .function("getQueryExtents", emscripten::select_overload<Point3(dtCrowd &)>(
+            [](dtCrowd &crowd_) -> Point3 {
+                const auto extents = crowd_.getQueryExtents();
+                return Point3(extents[0], extents[1], extents[2]);
+            }))
         ;
 }
