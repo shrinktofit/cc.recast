@@ -77,6 +77,10 @@ $content = (Get-Content -Path "./build/recastnavigation-js.mjs").Replace(
     "throwBindingError('Cannot convert argument of type ' + (handle.`$`$.smartPtrType ? handle.`$`$.smartPtrType.name : handle.`$`$.ptrType.name) + ' to parameter type ' + this.name)",
     "// throwBindingError('Cannot convert argument of type ' + (handle.`$`$.smartPtrType ? handle.`$`$.smartPtrType.name : handle.`$`$.ptrType.name) + ' to parameter type ' + this.name)"
 )
+# .Replace(
+#     "throw new BindingError(`"Use 'new' to construct `" + name);",
+#     "// throw new BindingError(`"Use 'new' to construct `" + name);"
+# )
 
 # Write-Host $content
 

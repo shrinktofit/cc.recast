@@ -474,7 +474,8 @@ decltype(auto) array_buffer_view_field() {
     });
 }
 
-struct DebugDrawWrapper: public emscripten::wrapper<duDebugDraw> {
+class DebugDrawWrapper: public emscripten::wrapper<duDebugDraw> {
+public:
     EMSCRIPTEN_WRAPPER(DebugDrawWrapper);
 
     ~DebugDrawWrapper() {
@@ -489,27 +490,27 @@ struct DebugDrawWrapper: public emscripten::wrapper<duDebugDraw> {
         return call<void>("texture", state);
     }
 
-	virtual void begin(duDebugDrawPrimitives prim, float size = 1.0f) {
+	void begin(duDebugDrawPrimitives prim, float size = 1.0f) {
         return call<void>("begin", prim, size);
     }
 
-	virtual void vertex(const float* pos, unsigned int color) {
+	void vertex(const float* pos, unsigned int color) {
         return this->vertex(pos[0], pos[1], pos[2], color);
     }
 
-	virtual void vertex(const float x, const float y, const float z, unsigned int color) {
+	void vertex(const float x, const float y, const float z, unsigned int color) {
         return call<void>("vertex", x, y, z, color);
     }
 
-	virtual void vertex(const float* pos, unsigned int color, const float* uv) {
+	void vertex(const float* pos, unsigned int color, const float* uv) {
         return this->vertex(pos[0], pos[1], pos[2], color, uv[0], uv[1]);
     }
 	
-	virtual void vertex(const float x, const float y, const float z, unsigned int color, const float u, const float v) {
+	void vertex(const float x, const float y, const float z, unsigned int color, const float u, const float v) {
         return call<void>("vertex", x, y, z, color, u, v);
     }
 	
-	virtual void end() {
+	void end() {
         return call<void>("end");
     }
 
@@ -811,8 +812,15 @@ EMSCRIPTEN_BINDINGS(detour) {
             }))
         ;
 
+    emscripten::enum_<duDebugDrawPrimitives>("DebugDrawPrimitives")
+        .value("DRAW_POINTS", duDebugDrawPrimitives::DU_DRAW_POINTS)
+        .value("DRAW_LINES", duDebugDrawPrimitives::DU_DRAW_LINES)
+        .value("DRAW_TRIS", duDebugDrawPrimitives::DU_DRAW_TRIS)
+        .value("DRAW_QUADS", duDebugDrawPrimitives::DU_DRAW_QUADS)
+        ;
+
     emscripten::class_<duDebugDraw>("DebugDraw")
-        .allow_subclass<DebugDrawWrapper>("DebugDrawWrapper")
+        .allow_subclass<DebugDrawWrapper>("DebugDrawWrapper", emscripten::constructor<>())
         .function("depthMask", &DebugDrawWrapper::depthMask, emscripten::pure_virtual())
         .function("texture", &DebugDrawWrapper::texture, emscripten::pure_virtual())
         .function("begin", &DebugDrawWrapper::begin, emscripten::pure_virtual())
@@ -821,5 +829,9 @@ EMSCRIPTEN_BINDINGS(detour) {
         .function("end", &DebugDrawWrapper::end, emscripten::pure_virtual())
         ;
 
-    emscripten::function("debugDrawNavMesh", &duDebugDrawNavMesh, emscripten::allow_raw_pointers());
+    emscripten::function("debugDrawNavMesh", emscripten::select_overload<void(duDebugDraw& dd, const dtNavMesh& mesh, unsigned char flags)>([](
+        duDebugDraw& dd, const dtNavMesh& mesh, unsigned char flags
+    ) {
+        return duDebugDrawNavMesh(&dd, mesh, flags);
+    }));
 }
