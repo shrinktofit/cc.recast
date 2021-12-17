@@ -84,7 +84,9 @@ $content = (Get-Content -Path "./build/recastnavigation-js.mjs").Replace(
 
 # Write-Host $content
 
-$content | Out-File -Force "X:\Dev\Repos\Leslie\XLStory\Client\Lib\recastnavigation-js\recastnavigation-js.mjs"
-Copy-Item ./build/recastnavigation-js.wasm "X:\Dev\Repos\Leslie\XLStory\Client\assets\Source\recastnavigation-js.wasm.bin" -Force
-(gci "X:\Dev\Repos\Leslie\XLStory\Client\assets\Source\Navigation\NavMeshAgent.ts").LastWriteTime = Get-Date
+$GAME_DIR = "X:\Dev\Repos\Leslie\XLStory\Client"
+
+$content | Out-File -Force "$GAME_DIR\Lib\recastnavigation-js\recastnavigation-js.mjs"
+Copy-Item ./build/recastnavigation-js.wasm "$GAME_DIR\assets\resources\recastnavigation-js.wasm.bin" -Force
+(gci "$GAME_DIR\assets\Source\Navigation\NavMeshAgent.ts").LastWriteTime = Get-Date
 Invoke-WebRequest http://localhost:7456/asset-db/refresh
