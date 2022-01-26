@@ -6,11 +6,10 @@ option(BUILD_WASM "Build WASM." on)
 
 set(CMAKE_VERBOSE_MAKEFILE on)
 
-file(GLOB_RECURSE wrapperSourceFiles
+file(GLOB_RECURSE recastNavigationDetourSourceFiles
     "src/wrapper/Detour/*.h"
     "src/wrapper/Detour/*.cpp"
-)
-file(GLOB_RECURSE recastNavigationDetourSourceFiles
+
     "recastnavigation/Detour/*.h"
     "recastnavigation/Detour/*.cpp"
 
@@ -21,6 +20,14 @@ file(GLOB_RECURSE recastNavigationDetourSourceFiles
     "recastnavigation/DebugUtils/Include/DetourDebugDraw.h"
     "recastnavigation/DebugUtils/Source/DebugDraw.cpp"
     "recastnavigation/DebugUtils/Source/DetourDebugDraw.cpp"
+)
+
+file(GLOB_RECURSE recastNavigationRecastSourceFiles
+    "src/wrapper/Recast/*.h"
+    "src/wrapper/Recast/*.cpp"
+
+    "recastnavigation/Recast/*.h"
+    "recastnavigation/Recast/*.cpp"
 )
 
 set (emccLinkerFlags "\
@@ -38,7 +45,7 @@ else ()
     set (emccLinkerFlags "${emccLinkerFlags} -s WASM=0")
 endif ()
 
-add_executable (recastnavigation-js ${wrapperSourceFiles} ${recastNavigationDetourSourceFiles})
+add_executable (recastnavigation-js ${recastNavigationDetourSourceFiles})
 set_target_properties (recastnavigation-js PROPERTIES CXX_STANDARD 17)
 set_target_properties (recastnavigation-js PROPERTIES SUFFIX ".mjs")
 set_target_properties (recastnavigation-js PROPERTIES LINK_FLAGS ${emccLinkerFlags})
@@ -50,17 +57,12 @@ target_include_directories (recastnavigation-js PRIVATE
     "recastnavigation/DebugUtils/Include"
 )
 
-# file(GLOB_RECURSE recastNavigationRecastSourceFiles
-#     "recastnavigation/Recast/*.h"
-#     "recastnavigation/Recast/*.cpp"
-# )
-
-# add_executable(recastnavigation-js.recast ${wrapperSourceFiles} ${recastNavigationRecastSourceFiles})
-# set_target_properties (recastnavigation-js.recast PROPERTIES CXX_STANDARD 17)
-# set_target_properties (recastnavigation-js.recast PROPERTIES SUFFIX ".mjs")
-# set_target_properties (recastnavigation-js.recast PROPERTIES LINK_FLAGS ${emccLinkerFlags})
-# target_include_directories (recastnavigation-js.recast PRIVATE
-#     "src"
-#     "recastnavigation/Recast/Include"
-# )
+add_executable(recastnavigation-js.recast ${recastNavigationRecastSourceFiles})
+set_target_properties (recastnavigation-js.recast PROPERTIES CXX_STANDARD 17)
+set_target_properties (recastnavigation-js.recast PROPERTIES SUFFIX ".mjs")
+set_target_properties (recastnavigation-js.recast PROPERTIES LINK_FLAGS ${emccLinkerFlags})
+target_include_directories (recastnavigation-js.recast PRIVATE
+    "src"
+    "recastnavigation/Recast/Include"
+)
 

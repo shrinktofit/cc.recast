@@ -70,7 +70,7 @@ try {
     Pop-Location
 }
 
-$content = (Get-Content -Path "./build/recastnavigation-js.mjs").Replace(
+$detourContent = (Get-Content -Path "./build/recastnavigation-js.mjs").Replace(
     "throwBindingError('Cannot convert argument of type ' + handle.`$`$.ptrType.name + ' to parameter type ' + this.name)",
     "// throwBindingError('Cannot convert argument of type ' + handle.`$`$.ptrType.name + ' to parameter type ' + this.name)"
 ).Replace(
@@ -82,11 +82,25 @@ $content = (Get-Content -Path "./build/recastnavigation-js.mjs").Replace(
 #     "// throw new BindingError(`"Use 'new' to construct `" + name);"
 # )
 
-# Write-Host $content
+# Write-Host $detourContent
+
+$recastContent = (Get-Content -Path "./build/recastnavigation-js.recast.mjs").Replace(
+    "throwBindingError('Cannot convert argument of type ' + handle.`$`$.ptrType.name + ' to parameter type ' + this.name)",
+    "// throwBindingError('Cannot convert argument of type ' + handle.`$`$.ptrType.name + ' to parameter type ' + this.name)"
+).Replace(
+    "throwBindingError('Cannot convert argument of type ' + (handle.`$`$.smartPtrType ? handle.`$`$.smartPtrType.name : handle.`$`$.ptrType.name) + ' to parameter type ' + this.name)",
+    "// throwBindingError('Cannot convert argument of type ' + (handle.`$`$.smartPtrType ? handle.`$`$.smartPtrType.name : handle.`$`$.ptrType.name) + ' to parameter type ' + this.name)"
+)
 
 $GAME_DIR = "X:\Dev\Repos\Leslie\XLStory\Client"
 
-$content | Out-File -Force "$GAME_DIR\Lib\recastnavigation-js\recastnavigation-js.mjs"
+$detourContent | Out-File -Force "$GAME_DIR\Lib\recastnavigation-js\recastnavigation-js.mjs"
 Copy-Item ./build/recastnavigation-js.wasm "$GAME_DIR\assets\resources\recastnavigation-js.wasm.bin" -Force
-(gci "$GAME_DIR\assets\Source\Navigation\NavMeshAgent.ts").LastWriteTime = Get-Date
+
+$recastContent | Out-File -Force "$GAME_DIR\Lib\recastnavigation-js\recastnavigation-js.recast.mjs"
+Copy-Item ./build/recastnavigation-js.recast.wasm "$GAME_DIR\assets\resources\recastnavigation-js.recast.wasm.bin" -Force
+
+(Get-ChildItem "$GAME_DIR\assets\Source\Navigation\NavMeshAgent.ts").LastWriteTime = Get-Date
+(Get-ChildItem "$GAME_DIR\assets\Source\Navigation\Recast.ts").LastWriteTime = Get-Date
+
 Invoke-WebRequest http://localhost:7456/asset-db/refresh
